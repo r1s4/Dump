@@ -6,6 +6,7 @@
 
 import numpy as np
 from social_media import Message
+import random
 
 
 class Agent(object):
@@ -26,29 +27,38 @@ class Agent(object):
 
         
     def evaluate_messages(self, screen):
+        #笹原はここで（スクリーン（友人のみ）の中の）異なる意見を遮断している
         self.concordant_msgs = []
         self.discordant_msgs = []
         if len(screen) > 0:
             self.concordant_msgs = screen[abs(self.opinion - screen.content) < self.epsilon]
             self.discordant_msgs = screen[abs(self.opinion - screen.content) >= self.epsilon]
 
+    '''
+    def update_opinion(self, mu):
+        if len(self.concordant_msgs) > 0:
+            self.opinion = self.opinion + mu * np.mean(self.concordant_msgs.content - self.opinion)
+    '''
 
     #比較用<1>：更新式のみ変更  
-    #他の比較→リンクの切断・接続（とりあえず保留）          
+    #他の比較→リンクの切断・接続（とりあえず保留）  
+    #自分たちの更新式は異なる意見は遮断せず，更新式を変えて更新している　→　どちらが良いか？       
     def update_opinion(self,screen):
         if len(screen)>0:
+            df_len=len(screen)
+            n=random.randrange(df_len)
             #保存していない？
             if self.truth == True:
-                if float(screen.content.tail(1))>=0.8:  #tail(1)でいいのか？random？
-                    self.opinion = self.reliability[int(screen.who_posted.tail(1))] * self.opinion / (self.unreliability[int(screen.who_posted.tail(1))] * (1 - self.opinion) + self.reliability[int(screen.who_posted.tail(1))] * self.opinion)
-                elif float(screen.content.tail(1))<=0.2:
-                    self.opinion = (1-self.reliability[int(screen.who_posted.tail(1))]) * self.opinion / ((1-self.unreliability[int(screen.who_posted.tail(1))]) * (1 - self.opinion) + (1-self.reliability[int(screen.who_posted.tail(1))]) * self.opinion)
+                if float(screen.at[screen.index[n],'content'])>=0.8:  #tail(1)でいいのか？random？
+                    self.opinion = self.reliability[int(screen.at[screen.index[n],'who_posted'])] * self.opinion / (self.unreliability[int(screen.at[screen.index[n],'who_posted'])] * (1 - self.opinion) + self.reliability[int(screen.at[screen.index[n],'who_posted'])] * self.opinion)
+                elif float(screen.at[screen.index[n],'content'])<=0.2:
+                    self.opinion = (1-self.reliability[int(screen.at[screen.index[n],'who_posted'])]) * self.opinion / ((1-self.unreliability[int(screen.at[screen.index[n],'who_posted'])]) * (1 - self.opinion) + (1-self.reliability[int(screen.at[screen.index[n],'who_posted'])]) * self.opinion)
 
             elif self.truth == False:
-                if float(screen.content.tail(1))>= 0.8:
-                    self.opinion = self.unreliability[int(screen.who_posted.tail(1))] * (1-self.opinion) / (self.unreliability[int(screen.who_posted.tail(1))] * (1 - self.opinion) + self.reliability[int(screen.who_posted.tail(1))] * self.opinion)
-                elif float(screen.content.tail(1))<= 0.2:
-                    self.opinion = ((1-self.unreliability[int(screen.who_posted.tail(1))]) * (1-self.opinion)) / ((1-self.unreliability[int(screen.who_posted.tail(1))]) * (1 - self.opinion) + (1-self.reliability[int(screen.who_posted.tail(1))])* self.opinion)
+                if float(screen.at[screen.index[n],'content'])>= 0.8:
+                    self.opinion = self.unreliability[int(screen.at[screen.index[n],'who_posted'])] * (1-self.opinion) / (self.unreliability[int(screen.at[screen.index[n],'who_posted'])] * (1 - self.opinion) + self.reliability[int(screen.at[screen.index[n],'who_posted'])] * self.opinion)
+                elif float(screen.at[screen.index[n],'content'])<= 0.2:
+                    self.opinion = ((1-self.unreliability[int(screen.at[screen.index[n],'who_posted'])]) * (1-self.opinion)) / ((1-self.unreliability[int(screen.at[screen.index[n],'who_posted'])]) * (1 - self.opinion) + (1-self.reliability[int(screen.at[screen.index[n],'who_posted'])])* self.opinion)
 
 
             

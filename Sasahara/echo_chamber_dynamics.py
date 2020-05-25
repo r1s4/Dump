@@ -10,6 +10,7 @@ import pandas as pd
 from agent import Agent
 from social_media import SocialMedia
 import analysis
+import matplotlib.pyplot as plt
 
 class EchoChamberDynamics(object):
     def __init__(self, num_agents, num_links, truth, epsilon, sns_seed, l, data_dir):
@@ -51,26 +52,75 @@ class EchoChamberDynamics(object):
             return True
         else:
             return False
-        
+
+
+    #EXPORT    
     def export_csv(self, data_dic, ofname):
         dir_path = os.path.join(self.data_dir, 'data')
         file_path = os.path.join(dir_path, ofname)
         pd.DataFrame(data_dic).to_csv(file_path, compression='xz')
     
-    
     def export_gexf(self, t):
         network_dir_path = os.path.join(self.data_dir, 'network_data')
-        file_path = os.path.join(network_dir_path, 'G_' + str(t).zfill(7) + '.gexf.bz2')
+        file_path = os.path.join(network_dir_path, 'G_' + str(t).zfill(7)+ '.gexf.bz2')
         cls = [float(a.opinion) for a in self.agents]
         self.social_media.set_node_colors(cls)
         nx.write_gexf(self.social_media.G, file_path)
         
     def final_exports(self, t):
+        #print(self.opinion_data)
         self.export_csv(self.opinion_data, 'opinions.csv.xz')
         self.export_csv(self.screen_diversity_data, 'screen_diversity.csv.xz')
         self.social_media.message_df.to_csv(os.path.join(self.data_dir + '/data', 'messages.csv.xz'))
         self.export_gexf(t)
-        
+
+        Correct=0
+        Incorrect=0
+        Undetermined=0
+        for i in range(1,self.num_agents):
+            if self.opinion_data[-1][i] >=0.8:
+                Correct=Correct+1
+            elif self.opinion_data[-1][i] <=0.2:
+                Incorrect=Incorrect+1
+            else:
+                Undetermined=Undetermined+1
+
+        result = [ Correct,Incorrect,Undetermined]
+        labels = ["Correct", "Incorrect", "Undetermined"]
+        fig = plt.figure()
+        plt.pie(result, labels=labels, autopct="%1.1f%%") #正しく意見を決めた，間違えて意見を決めた，意見が決まっていないという円グラフを描く
+        fig.savefig(self.data_dir + "/img.png")
+
+    '''
+    #評価
+    def Seg_count(self):
+    if self.opinon < 0.5:
+        return 0
+    elif self.opinion >= 0.5:
+        return 1
+
+    def Segregation(self):
+        for user_id in range(num_agents):
+            x=self.agents[user_id].Seg_countself(self)
+            if x == 0:
+                C_minus.apped(user_id)
+            elif x ==1:
+                C_plus.apped(user_id)
+
+        for C in C_minus:
+            
+
+        s = 1 - abs(E_b) / (2*d * abs(len(C_plus)) * abs(len(C_minus)))
+
+     def Triads():
+
+     
+
+     '''   
+
+
+
+
     def evolve(self, t_max, mu, p, q, rewiring_methods):
         for t in range(t_max):
             #print("t = ", t)
@@ -114,7 +164,7 @@ if __name__ == '__main__':
     n_links = 400
     sns_seed = 1
     l = 10 # screen size
-    t_max = 100000 # max steps
+    t_max = 5000 # max steps
     epsilon = 0.4 # bounded confidence parameter
     mu = 0.5 # social influence strength
     truth =True #追加/True or False
